@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: S3Chimera-MySQL-Sharded-Test
+
+chimera:
+  drivers:
+    - name: "test-mysql-sharded"
+      type: "mysql"
+      enabled: true
+      properties:
+        # 元数据库 (存储 bucket、object 元数据)
+        url: "${CHIMERA_MYSQL_META_URL:r2dbc:mysql://127.0.0.1:3306/s3chimera_meta}"
+        username: "${CHIMERA_MYSQL_USERNAME:root}"
+        password: "${CHIMERA_MYSQL_PASSWORD:testpass}"
+        
+        # 数据分片库 (存储 chunk 数据)
+        data-sources:
+          - name: "chunk-1"
+            url: "${CHIMERA_MYSQL_CHUNK1_URL:r2dbc:mysql://127.0.0.1:3306/s3chimera_chunk1}"
+            username: "${CHIMERA_MYSQL_USERNAME:root}"
+            password: "${CHIMERA_MYSQL_PASSWORD:testpass}"
+          - name: "chunk-2"
+            url: "${CHIMERA_MYSQL_CHUNK2_URL:r2dbc:mysql://127.0.0.1:3306/s3chimera_chunk2}"
+            username: "${CHIMERA_MYSQL_USERNAME:root}"
+            password: "${CHIMERA_MYSQL_PASSWORD:testpass}"
+        
+        # 分片配置
+        table-shard-count: 4
+        total-hash-slots: 64
+        chunk-size: "1MB"
+        pool-size: 5
+        auto-create-schema: true
+        enable-virtual-threads: true
+
+  routing:
+    default-driver: "test-mysql-sharded"
+    buckets: []
+
+  server:
+    region: "us-east-1"
+
+  auth:
+    enabled: false
+    allow-anonymous-read: true
+    allow-anonymous-write: true
+
+  cors:
+    enabled: false
+
+logging:
+  level:
+    win.ixuni.chimera: INFO
+    io.r2dbc.pool: WARN
+    io.asyncer.r2dbc.mysql: WARN

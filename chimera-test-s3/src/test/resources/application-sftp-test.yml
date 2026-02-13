@@ -1,0 +1,24 @@
+# =========================================
+# SFTP 驱动测试配置
+# =========================================
+spring:
+  main:
+    allow-bean-definition-overriding: true
+
+chimera:
+  routing:
+    default-driver: sftp-test
+  drivers:
+    - name: sftp-test
+      type: sftp
+      enabled: true
+      properties:
+        host: ${CHIMERA_SFTP_HOST:localhost}
+        port: ${CHIMERA_SFTP_PORT:2222}
+        username: ${CHIMERA_SFTP_USERNAME:testuser}
+        password: ${CHIMERA_SFTP_PASSWORD:testpass}
+        base-path: ${CHIMERA_SFTP_BASE_PATH:/upload}
+
+logging:
+  level:
+    win.ixuni.chimera: DEBUG

@@ -1,0 +1,20 @@
+# =========================================
+# Local FS 驱动测试配置
+# =========================================
+spring:
+  main:
+    allow-bean-definition-overriding: true
+
+chimera:
+  routing:
+    default-driver: local-test
+  drivers:
+    - name: local-test
+      type: local
+      enabled: true
+      properties:
+        base-path: /tmp/s3chimera-test
+
+logging:
+  level:
+    win.ixuni.chimera: DEBUG

@@ -1,0 +1,16 @@
+plugins {
+    id 'java-library'
+}
+
+description = 'S3Chimera S3 Proxy Driver - Standard S3/MinIO backend proxy'
+
+dependencies {
+    implementation project(':chimera-core')
+
+    // AWS S3 SDK
+    implementation platform('software.amazon.awssdk:bom:2.25.0')
+    implementation('software.amazon.awssdk:s3') {
+        // Exclude slf4j-simple to avoid conflicts with Spring Boot logback
+        exclude group: 'org.slf4j', module: 'slf4j-simple'
+    }
+}

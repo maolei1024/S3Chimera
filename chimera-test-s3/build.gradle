@@ -1,0 +1,80 @@
+plugins {
+    id 'java-library'
+}
+
+description = 'S3Chimera Test S3 - S3 compatibility test suite'
+
+dependencies {
+    testImplementation project(':chimera-server')
+    
+    // All driver modules
+    testImplementation project(':chimera-driver-memory')
+    testImplementation project(':chimera-driver-mysql')
+    testImplementation project(':chimera-driver-local')
+    testImplementation project(':chimera-driver-s3')
+    testImplementation project(':chimera-driver-webdav')
+    testImplementation project(':chimera-driver-sftp')
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webflux'
+    testImplementation 'io.projectreactor:reactor-test'
+
+    // H2 for testing MySQL driver in MySQL compatibility mode
+    testImplementation 'io.r2dbc:r2dbc-h2'
+    testImplementation 'com.h2database:h2'
+    testImplementation 'io.r2dbc:r2dbc-pool'
+
+    // AWS S3 SDK for compatibility testing
+    testImplementation platform('software.amazon.awssdk:bom:2.29.45')
+    testImplementation('software.amazon.awssdk:s3') {
+        exclude group: 'org.slf4j', module: 'slf4j-simple'
+    }
+    testImplementation('software.amazon.awssdk:netty-nio-client') {
+        exclude group: 'org.slf4j', module: 'slf4j-simple'
+    }
+    
+    // Lombok support for tests
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+}
+
+// Globally exclude slf4j-simple to avoid conflicts with logback
+configurations.all {
+    exclude group: 'org.slf4j', module: 'slf4j-simple'
+}
+
+// 支持通过 -Pdriver=xxx 指定测试驱动
+// 单驱动测试时排除跨驱动测试类
+test {
+    useJUnitPlatform()
+    
+    if (project.hasProperty('driver')) {
+        systemProperty 'spring.profiles.active', "${project.driver}-test"
+        // 单驱动测试时排除跨驱动测试类
+        exclude '**/crossdriver/**'
+    }
+}
+
+// Cross-driver matrix test task (using memory + local drivers)
+tasks.register('crossDriverTest', Test) {
+    useJUnitPlatform()
+    systemProperty 'spring.profiles.active', 'crossdriver-matrix'
+    
+    // 继承 test 任务的类路径配置
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    
+    // 只运行跨驱动矩阵测试
+    filter {
+        includeTestsMatching 'win.ixuni.chimera.test.s3.crossdriver.CrossDriverMatrixTest'
+    }
+
+    testLogging {
+        // 展示测试执行详情
+        events "passed", "skipped", "failed", "standardOut", "standardError"
+        exceptionFormat "full"
+        showStandardStreams = true
+    }
+}

@@ -1,0 +1,70 @@
+spring:
+  application:
+    name: S3Chimera
+
+# ==================== S3Chimera Configuration Example ====================
+# This file serves as a quick-start example with a Memory driver.
+# Copy this file to 'application.yml' or 'application-<profile>.yml' and customize it.
+#
+# For detailed configuration of all supported drivers (Local, MySQL, PostgreSQL,
+# MongoDB, S3 Proxy, SFTP, WebDAV, Memory), see the docs/drivers/ directory.
+
+chimera:
+  # ==================== Driver Configuration ====================
+  # Available types: local, memory, mysql, postgresql, mongodb, s3, sftp, webdav
+  # See docs/drivers/ for detailed configuration documentation of each driver.
+  drivers:
+    - name: "mem-default"
+      type: "memory"
+      enabled: true
+
+  # ==================== Routing Configuration ====================
+  routing:
+    default-driver: "mem-default"
+    buckets: []
+
+  # ==================== Server Configuration ====================
+  server:
+    path-prefix: ""
+    virtual-host-style: false
+    # base-domain: "s3.example.com"
+    region: "us-east-1"
+
+  # ==================== Authentication ====================
+  auth:
+    enabled: true
+    allow-anonymous-read: false
+    allow-anonymous-write: false
+    credentials:
+      - access-key-id: "AKIAIOSFODNN7EXAMPLE"
+        secret-access-key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+        user-id: "admin"
+        description: "Administrator"
+        enabled: true
+
+  # ==================== CORS Configuration ====================
+  cors:
+    enabled: true
+    allowed-origins: [ "*" ]
+    allowed-methods: [ "GET", "PUT", "POST", "DELETE", "HEAD" ]
+    allowed-headers: [ "*" ]
+    exposed-headers:
+      - ETag
+      - x-amz-request-id
+      - x-amz-id-2
+      - x-amz-version-id
+      - x-amz-delete-marker
+      - Content-Range
+      - Accept-Ranges
+    allow-credentials: false
+    max-age: 3600
+
+# ==================== Standard Spring Configuration ====================
+server:
+  port: 9000
+
+logging:
+  level:
+    win.ixuni.chimera: INFO
+    org.springframework.r2dbc: INFO
+    io.r2dbc: WARN

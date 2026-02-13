@@ -1,0 +1,18 @@
+# =========================================
+# Memory 驱动测试配置
+# =========================================
+spring:
+  main:
+    allow-bean-definition-overriding: true
+
+chimera:
+  routing:
+    default-driver: memory-test
+  drivers:
+    - name: memory-test
+      type: memory
+      enabled: true
+
+logging:
+  level:
+    win.ixuni.chimera: DEBUG

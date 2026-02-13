@@ -1,0 +1,69 @@
+spring:
+  application:
+    name: S3Chimera
+
+# ==================== S3Chimera Configuration ====================
+chimera:
+  # Driver configuration
+  drivers:
+    - name: "mem-default"
+      type: "memory"
+      enabled: true
+
+  # Routing configuration
+  routing:
+    default-driver: "mem-default"
+    buckets: []
+
+  # Server configuration
+  server:
+    path-prefix: ""
+    virtual-host-style: false
+    # base-domain: "s3.example.com"
+    region: "us-east-1"
+
+  # Authentication configuration
+  auth:
+    enabled: true
+    allow-anonymous-read: false
+    allow-anonymous-write: false
+    credentials:
+      - access-key-id: "AKIAIOSFODNN7EXAMPLE"
+        secret-access-key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+        user-id: "admin"
+        description: "Administrator"
+        enabled: true
+
+  # CORS configuration
+  cors:
+    enabled: true
+    allowed-origins:
+      - "*"
+    allowed-methods:
+      - GET
+      - PUT
+      - POST
+      - DELETE
+      - HEAD
+    allowed-headers:
+      - "*"
+    exposed-headers:
+      - ETag
+      - x-amz-request-id
+      - x-amz-id-2
+      - x-amz-version-id
+      - x-amz-delete-marker
+      - Content-Range
+      - Accept-Ranges
+    allow-credentials: false
+    max-age: 3600
+
+# ==================== Server Configuration ====================
+server:
+  port: 9000
+
+# ==================== Logging Configuration ====================
+logging:
+  level:
+    win.ixuni.chimera: DEBUG
+    org.springframework.r2dbc: INFO

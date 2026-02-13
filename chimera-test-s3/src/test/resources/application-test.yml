@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: S3Chimera-Test
+  r2dbc:
+    url: r2dbc:h2:mem:///testdb;DB_CLOSE_DELAY=-1;MODE=MySQL
+    username: sa
+    password:
+
+chimera:
+  drivers:
+    - name: "test-mysql"
+      type: "mysql"
+      enabled: true
+      properties:
+        url: "r2dbc:h2:mem:///testdb;DB_CLOSE_DELAY=-1;MODE=MySQL"
+        username: "sa"
+        password: ""
+        table-shard-count: 4
+        total-hash-slots: 64
+        chunk-size: 1048576
+        pool-size: 5
+        auto-create-schema: true
+        enable-virtual-threads: true
+
+  routing:
+    default-driver: "test-mysql"
+    buckets: []
+
+  # 服务器配置
+  server:
+    region: "us-east-1"
+
+  # Disable authentication in test environment
+  auth:
+    enabled: false
+    allow-anonymous-read: true
+    allow-anonymous-write: true
+
+  # Disable CORS in test environment
+  cors:
+    enabled: false
+
+logging:
+  level:
+    win.ixuni.chimera: DEBUG

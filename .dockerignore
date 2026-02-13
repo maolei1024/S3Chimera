@@ -1,0 +1,34 @@
+# Git
+.git
+.gitignore
+
+# GitHub
+.github
+
+# IDE
+.idea
+.vscode
+*.iml
+
+# Documentation
+*.md
+docs/
+LICENSE
+
+# Build outputs
+build/
+*/build/
+.gradle/
+*/.gradle/
+
+# Test module (not needed in Docker image)
+chimera-test-s3/
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# OS files
+.DS_Store
+Thumbs.db

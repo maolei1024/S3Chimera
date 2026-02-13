@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: S3Chimera-CrossDriver-Test
+
+chimera:
+  drivers:
+    # Memory 驱动
+    - name: "memory-driver"
+      type: "memory"
+      enabled: true
+    
+    # MySQL 驱动
+    - name: "mysql-driver"
+      type: "mysql"
+      enabled: true
+      properties:
+        url: "r2dbc:mysql://24.233.30.253:3306/s3chimera_test"
+        username: "s3chimera_test"
+        password: "ktCKzys5cdfzMFRy"
+        table-shard-count: 4
+        total-hash-slots: 64
+        chunk-size: "1MB"
+        pool-size: 5
+        auto-create-schema: true
+
+  routing:
+    default-driver: "mysql-driver"
+    buckets:
+      # Buckets starting with memory-* use the memory driver
+      - pattern: "memory-*"
+        driver: "memory-driver"
+        priority: 1
+      # Other buckets use mysql driver (default)
+
+  server:
+    region: "us-east-1"
+
+  auth:
+    enabled: false
+    allow-anonymous-read: true
+    allow-anonymous-write: true
+
+  cors:
+    enabled: false
+
+logging:
+  level:
+    win.ixuni.chimera: INFO
+    io.r2dbc.pool: WARN
+    io.asyncer.r2dbc.mysql: WARN

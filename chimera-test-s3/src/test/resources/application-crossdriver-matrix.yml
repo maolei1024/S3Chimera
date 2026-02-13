@@ -1,0 +1,131 @@
+spring:
+  application:
+    name: S3Chimera-CrossDriver-Matrix-Test
+
+chimera:
+  # 跨驱动测试配置
+  crossdriver:
+    enabled: true
+    pick-count: 5 # 每次运行随机选择5个组合进行测试 (从N*(N-1)中抽样)
+    large-file-size: 20971520 # 20MB
+    small-file-size: 10240 # 10KB
+
+  # 驱动资源池 (全部8种驱动)
+  drivers:
+    # ========== Drivers without external dependencies ==========
+    - name: "driver-mem"
+      type: memory
+      enabled: true
+      properties:
+        bucket-prefix: "mem-"
+
+    - name: "driver-local"
+      type: local
+      enabled: true
+      properties:
+        bucket-prefix: "local-"
+        base-path: "/tmp/chimera-cross-test"
+
+    # ========== 数据库驱动 ==========
+    - name: "driver-mysql"
+      type: mysql
+      enabled: true
+      properties:
+        bucket-prefix: "mysql-"
+        url: "r2dbc:mysql://127.0.0.1:3306/s3chimera_cross"
+        username: "root"
+        password: "testpass"
+
+    - name: "driver-postgresql"
+      type: postgresql
+      enabled: true
+      properties:
+        bucket-prefix: "pg-"
+        url: "r2dbc:postgresql://127.0.0.1:5432/s3chimera_cross"
+        username: "postgres"
+        password: "testpass"
+
+    - name: "driver-mongodb"
+      type: mongodb
+      enabled: true
+      properties:
+        bucket-prefix: "mongo-"
+        uri: "mongodb://127.0.0.1:27017"
+        database: "s3chimera_cross"
+
+    # ========== 外部存储驱动 ==========
+    - name: "driver-s3"
+      type: s3
+      enabled: true
+      properties:
+        bucket-prefix: "minio-"
+        endpoint: "http://127.0.0.1:9000"
+        access-key: "minioadmin"
+        secret-key: "minioadmin"
+        region: "us-east-1"
+
+    - name: "driver-webdav"
+      type: webdav
+      enabled: true
+      properties:
+        bucket-prefix: "webdav-"
+        url: "http://127.0.0.1:8888/"
+        username: "testuser"
+        password: "testpass"
+
+    - name: "driver-sftp"
+      type: sftp
+      enabled: true
+      properties:
+        bucket-prefix: "sftp-"
+        host: "127.0.0.1"
+        port: 2222
+        username: "testuser"
+        password: "testpass"
+        base-path: "/upload"
+
+  # Routing rules (route to driver by bucket prefix)
+  routing:
+    default-driver: "driver-local"
+    buckets:
+      - pattern: "mem-*"
+        driver: "driver-mem"
+        priority: 1
+      - pattern: "local-*"
+        driver: "driver-local"
+        priority: 1
+      - pattern: "mysql-*"
+        driver: "driver-mysql"
+        priority: 1
+      - pattern: "pg-*"
+        driver: "driver-postgresql"
+        priority: 1
+      - pattern: "mongo-*"
+        driver: "driver-mongodb"
+        priority: 1
+      - pattern: "minio-*"
+        driver: "driver-s3"
+        priority: 1
+      - pattern: "webdav-*"
+        driver: "driver-webdav"
+        priority: 1
+      - pattern: "sftp-*"
+        driver: "driver-sftp"
+        priority: 1
+
+  server:
+    region: "us-east-1"
+
+  auth:
+    enabled: false
+    allow-anonymous-read: true
+    allow-anonymous-write: true
+
+  cors:
+    enabled: false
+
+logging:
+  level:
+    win.ixuni.chimera: INFO
+    io.r2dbc.pool: WARN
+    io.asyncer.r2dbc.mysql: WARN

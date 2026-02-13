@@ -1,0 +1,71 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '4.0.0' apply false
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.graalvm.buildtools.native' version '0.11.3' apply false
+}
+
+group = 'win.ixuni'
+version = '0.0.1-SNAPSHOT'
+description = 'S3Chimera - S3 Compatible Storage Gateway with Pluggable Drivers'
+
+ext {
+    set('springBootVersion', '4.0.0')
+    set('lombokVersion', '1.18.38')
+}
+
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects { subproject ->
+    apply plugin: 'java'
+    apply plugin: 'io.spring.dependency-management'
+
+    group = 'win.ixuni.chimera'
+    version = rootProject.version
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+    }
+
+    configurations {
+        compileOnly {
+            extendsFrom annotationProcessor
+        }
+        // Globally exclude slf4j-simple to avoid conflicts with logback
+        all {
+            exclude group: 'org.slf4j', module: 'slf4j-simple'
+        }
+    }
+
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.boot:spring-boot-dependencies:${rootProject.ext.springBootVersion}"
+        }
+    }
+
+    dependencies {
+        compileOnly "org.projectlombok:lombok:${rootProject.ext.lombokVersion}"
+        annotationProcessor "org.projectlombok:lombok:${rootProject.ext.lombokVersion}"
+        
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    }
+
+    tasks.named('test') {
+        useJUnitPlatform()
+        testLogging {
+            events "passed", "skipped", "failed", "standardOut", "standardError"
+            showStandardStreams = true
+        }
+    }
+}

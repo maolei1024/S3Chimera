@@ -1,0 +1,12 @@
+plugins {
+    id 'java-library'
+}
+
+description = 'S3Chimera SFTP Driver - SFTP server storage backend'
+
+dependencies {
+    implementation project(':chimera-core')
+    
+    // Apache MINA SSHD for SFTP client
+    implementation 'org.apache.sshd:sshd-sftp:2.12.1'
+}

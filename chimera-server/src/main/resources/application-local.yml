@@ -1,0 +1,101 @@
+spring:
+  application:
+    name: S3Chimera
+
+# ==================== S3Chimera 配置 ====================
+chimera:
+  drivers:
+    # 本地文件系统
+    - name: local-storage
+      type: local
+      properties:
+        base-path: ./s3chimera
+
+
+  # Routing configuration
+  routing:
+    # 默认驱动
+    default-driver: "local-storage"
+
+    # Bucket routing rules
+    buckets: []
+    # - pattern: "cache-*"
+    #   driver: "mem-default"
+    #   priority: 10
+    # - pattern: "data-*"
+    #   driver: "mysql-main"
+    #   priority: 20
+
+  # 服务器配置
+  server:
+    path-prefix: ""
+    # 虚拟主机风格: bucket.endpoint.com/key 而不是 endpoint.com/bucket/key
+    # Configure DNS: *.your-domain.com -> server IP before enabling
+    virtual-host-style: false
+    # Base domain for identifying virtual-host-style requests
+    # 例如: base-domain: "s3.example.com" 则 mybucket.s3.example.com 识别为 bucket "mybucket"
+    # If not set, the first subdomain will be auto-extracted from the Host header as bucket
+    # base-domain: "s3.example.com"
+    region: "us-east-1"
+
+  # 认证配置
+  auth:
+    # Whether to enable signature verification (recommended for public deployments)
+    enabled: true
+    # 是否允许匿名读取
+    allow-anonymous-read: false
+    # 是否允许匿名写入
+    allow-anonymous-write: false
+    # 静态凭证列表
+    credentials:
+      - access-key-id: "AKIAIOSFODNN7EXAMPLE"
+        secret-access-key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+        user-id: "admin"
+        description: "管理员账户"
+        enabled: true
+      # 可添加更多凭证
+      # - access-key-id: "AKIAI44QH8DHBEXAMPLE"
+      #   secret-access-key: "je7MtGbClwBF/2Zp9Utk/h3yCo8nvbEXAMPLEKEY"
+      #   user-id: "user1"
+      #   description: "Regular user"
+      #   enabled: true
+
+  # CORS cross-origin configuration
+  cors:
+    enabled: true
+    # Allowed origins, * means allow all
+    allowed-origins:
+      - "*"
+    # 允许的 HTTP 方法
+    allowed-methods:
+      - GET
+      - PUT
+      - POST
+      - DELETE
+      - HEAD
+    # 允许的请求头
+    allowed-headers:
+      - "*"
+    # Response headers exposed to client
+    exposed-headers:
+      - ETag
+      - x-amz-request-id
+      - x-amz-id-2
+      - x-amz-version-id
+      - x-amz-delete-marker
+      - Content-Range
+      - Accept-Ranges
+    # 是否允许发送凭证
+    allow-credentials: false
+    # Preflight request cache duration (seconds)
+    max-age: 3600
+
+# ==================== 服务器配置 ====================
+server:
+  port: 9000
+
+# ==================== 日志配置 ====================
+logging:
+  level:
+    win.ixuni.chimera: DEBUG
+    org.springframework.r2dbc: INFO

@@ -1,0 +1,22 @@
+plugins {
+    id 'java-library'
+}
+
+description = 'S3Chimera PostgreSQL Driver - R2DBC-based PostgreSQL storage implementation with database/table sharding'
+
+dependencies {
+    implementation project(':chimera-core')
+    
+    // R2DBC SPI (核心接口)
+    implementation 'io.r2dbc:r2dbc-spi'
+    
+    // PostgreSQL R2DBC 驱动
+    implementation 'org.postgresql:r2dbc-postgresql:1.0.7.RELEASE'
+    
+    // R2DBC 连接池
+    implementation 'io.r2dbc:r2dbc-pool'
+    
+    // Test dependencies
+    testImplementation 'io.r2dbc:r2dbc-h2'
+    testImplementation 'com.h2database:h2'
+}

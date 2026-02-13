@@ -1,0 +1,9 @@
+plugins {
+    id 'java-library'
+}
+
+description = 'S3Chimera Memory Driver - In-memory storage implementation'
+
+dependencies {
+    implementation project(':chimera-core')
+}

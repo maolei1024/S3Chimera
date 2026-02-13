@@ -1,0 +1,13 @@
+rootProject.name = 'S3Chimera'
+
+include 'chimera-core'
+include 'chimera-driver-local'
+include 'chimera-driver-memory'
+include 'chimera-driver-mongodb'
+include 'chimera-driver-mysql'
+include 'chimera-driver-postgresql'
+include 'chimera-driver-s3'
+include 'chimera-driver-sftp'
+include 'chimera-driver-webdav'
+include 'chimera-server'
+include 'chimera-test-s3'

@@ -1,0 +1,12 @@
+plugins {
+    id 'java-library'
+}
+
+description = 'S3Chimera WebDAV Driver - WebDAV server backend'
+
+dependencies {
+    implementation project(':chimera-core')
+    
+    // Sardine WebDAV client
+    implementation 'com.github.lookfirst:sardine:5.12'
+}

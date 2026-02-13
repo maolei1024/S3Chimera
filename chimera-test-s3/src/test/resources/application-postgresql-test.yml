@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: S3Chimera-PostgreSQL-Test
+
+chimera:
+  drivers:
+    - name: "test-postgresql"
+      type: "postgresql"
+      enabled: true
+      properties:
+        # Use environment variable or default value
+        url: "${CHIMERA_POSTGRESQL_URL:r2dbc:postgresql://127.0.0.1:5432/s3chimera_test}"
+        username: "${CHIMERA_POSTGRESQL_USERNAME:postgres}"
+        password: "${CHIMERA_POSTGRESQL_PASSWORD:testpass}"
+        
+        # Use smaller shard configuration for test environment
+        table-shard-count: 4
+        total-hash-slots: 64
+        chunk-size: "1MB"
+        pool-size: 5
+        auto-create-schema: true
+
+  routing:
+    default-driver: "test-postgresql"
+    buckets: []
+
+  server:
+    region: "us-east-1"
+
+  # Disable authentication in test environment
+  auth:
+    enabled: false
+    allow-anonymous-read: true
+    allow-anonymous-write: true
+
+  cors:
+    enabled: false
+
+logging:
+  level:
+    win.ixuni.chimera: INFO
+    io.r2dbc.postgresql: WARN

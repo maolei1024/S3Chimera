@@ -1,0 +1,22 @@
+# =========================================
+# WebDAV 驱动测试配置
+# =========================================
+spring:
+  main:
+    allow-bean-definition-overriding: true
+
+chimera:
+  routing:
+    default-driver: webdav-test
+  drivers:
+    - name: webdav-test
+      type: webdav
+      enabled: true
+      properties:
+        url: ${CHIMERA_WEBDAV_URL:http://localhost:8888/}
+        username: ${CHIMERA_WEBDAV_USERNAME:testuser}
+        password: ${CHIMERA_WEBDAV_PASSWORD:testpass}
+
+logging:
+  level:
+    win.ixuni.chimera: DEBUG

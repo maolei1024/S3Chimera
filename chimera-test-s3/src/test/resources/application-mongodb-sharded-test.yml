@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: S3Chimera-MongoDB-Sharded-Test
+
+chimera:
+  drivers:
+    - name: "test-mongodb-sharded"
+      type: "mongodb"
+      enabled: true
+      properties:
+        # 元数据库 (存储 bucket、object 元数据)
+        uri: "${CHIMERA_MONGODB_META_URI:mongodb://127.0.0.1:27017}"
+        database: "${CHIMERA_MONGODB_META_DATABASE:s3chimera_meta}"
+        
+        # 数据分片库 (存储 chunk 数据)
+        data-sources:
+          - name: "chunk-1"
+            uri: "${CHIMERA_MONGODB_CHUNK1_URI:mongodb://127.0.0.1:27017}"
+            database: "${CHIMERA_MONGODB_CHUNK1_DATABASE:s3chimera_chunk1}"
+          - name: "chunk-2"
+            uri: "${CHIMERA_MONGODB_CHUNK2_URI:mongodb://127.0.0.1:27017}"
+            database: "${CHIMERA_MONGODB_CHUNK2_DATABASE:s3chimera_chunk2}"
+        
+        # 分片配置
+        chunk-size: "1MB"
+        auto-create-schema: true
+
+  routing:
+    default-driver: "test-mongodb-sharded"
+    buckets: []
+
+  server:
+    region: "us-east-1"
+
+  auth:
+    enabled: false
+    allow-anonymous-read: true
+    allow-anonymous-write: true
+
+  cors:
+    enabled: false
+
+logging:
+  level:
+    win.ixuni.chimera: INFO
+    org.mongodb.driver: WARN

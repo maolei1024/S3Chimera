@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: S3Chimera-MySQL-Test
+
+chimera:
+  drivers:
+    - name: "test-mysql"
+      type: "mysql"
+      enabled: true
+      properties:
+        # Single-database mode: use same database for metadata and chunks
+        url: "${CHIMERA_MYSQL_URL:r2dbc:mysql://127.0.0.1:3306/s3chimera}"
+        username: "${CHIMERA_MYSQL_USERNAME:root}"
+        password: "${CHIMERA_MYSQL_PASSWORD:testpass}"
+        
+        # Use smaller shard configuration for test environment
+        table-shard-count: 4
+        total-hash-slots: 64
+        chunk-size: "1MB"
+        pool-size: 5
+        auto-create-schema: true
+        enable-virtual-threads: true
+
+  routing:
+    default-driver: "test-mysql"
+    buckets: []
+
+  server:
+    region: "us-east-1"
+
+  # Disable authentication in test environment
+  auth:
+    enabled: false
+    allow-anonymous-read: true
+    allow-anonymous-write: true
+
+  cors:
+    enabled: false
+
+logging:
+  level:
+    win.ixuni.chimera: INFO
+    io.r2dbc.pool: WARN
+    io.asyncer.r2dbc.mysql: WARN

@@ -1,0 +1,15 @@
+plugins {
+    id 'java-library'
+}
+
+description = 'S3Chimera MongoDB Driver - reactive storage implementation based on MongoDB'
+
+dependencies {
+    implementation project(':chimera-core')
+    
+    // MongoDB reactive driver
+    implementation 'org.mongodb:mongodb-driver-reactivestreams:5.3.1'
+    
+    // Test dependencies
+    testImplementation 'de.flapdoodle.embed:de.flapdoodle.embed.mongo:4.9.3'
+}

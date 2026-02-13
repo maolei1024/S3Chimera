@@ -1,0 +1,16 @@
+plugins {
+    id 'java-library'
+}
+
+description = 'S3Chimera Core - Driver interfaces, models and common utilities'
+
+dependencies {
+    api 'org.springframework.boot:spring-boot-starter-webflux'
+    api 'jakarta.validation:jakarta.validation-api'
+    
+    // XML support for S3 API responses
+    api 'jakarta.xml.bind:jakarta.xml.bind-api'
+    api 'org.glassfish.jaxb:jaxb-runtime'
+    api 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
+    api 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+}

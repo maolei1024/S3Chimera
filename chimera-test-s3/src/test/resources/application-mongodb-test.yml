@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: S3Chimera-MongoDB-Test
+
+chimera:
+  drivers:
+    - name: "test-mongodb"
+      type: "mongodb"
+      enabled: true
+      properties:
+        # Use environment variable or default value
+        uri: "${CHIMERA_MONGODB_URI:mongodb://127.0.0.1:27017}"
+        database: "${CHIMERA_MONGODB_DATABASE:s3chimera_test}"
+        
+        # 测试环境配置
+        chunk-size: "1MB"
+        auto-create-schema: true
+
+  routing:
+    default-driver: "test-mongodb"
+    buckets: []
+
+  server:
+    region: "us-east-1"
+
+  # Disable authentication in test environment
+  auth:
+    enabled: false
+    allow-anonymous-read: true
+    allow-anonymous-write: true
+
+  cors:
+    enabled: false
+
+logging:
+  level:
+    win.ixuni.chimera: INFO
+    org.mongodb.driver: WARN

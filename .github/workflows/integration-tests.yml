@@ -1,0 +1,378 @@
+# ===========================================
+# S3Chimera Integration Tests Workflow (Matrix Optimized)
+# ===========================================
+name: Integration Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+env:
+  JAVA_VERSION: '21'
+  GRADLE_OPTS: '-Dorg.gradle.daemon=false'
+
+jobs:
+  # =========================================
+  # Build stage: compile and upload JAR
+  # =========================================
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'gradle'
+      - name: Build project
+        run: ./gradlew build -x test --no-daemon
+      - name: Upload Server Jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: chimera-server
+          path: chimera-server/build/libs/chimera-server-0.0.1-SNAPSHOT.jar
+
+  # =========================================
+  # 矩阵化集成测试阶段
+  # =========================================
+  test-drivers:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # Continue testing other drivers even if one fails
+      matrix:
+        driver: [memory, local, mysql, postgresql, mongodb, mysql-sharded, postgresql-sharded, mongodb-sharded, s3, webdav, sftp]
+        include:
+          - driver: memory
+            env: { CHIMERA_DRIVER_TYPE: memory }
+
+          - driver: local
+            env: { CHIMERA_DRIVER_TYPE: local }
+
+          - driver: mysql
+            container: "mysql:8.0"
+            env:
+              CHIMERA_DRIVER_TYPE: mysql
+              CHIMERA_MYSQL_URL: "r2dbc:mysql://127.0.0.1:3306/s3chimera"
+              CHIMERA_MYSQL_USERNAME: root
+              CHIMERA_MYSQL_PASSWORD: testpass
+
+          - driver: postgresql
+            container: "postgres:16"
+            env:
+              CHIMERA_DRIVER_TYPE: postgresql
+              CHIMERA_POSTGRESQL_URL: "r2dbc:postgresql://127.0.0.1:5432/s3chimera_test"
+              CHIMERA_POSTGRESQL_USERNAME: postgres
+              CHIMERA_POSTGRESQL_PASSWORD: testpass
+
+          - driver: mongodb
+            container: "mongo:7.0"
+            env:
+              CHIMERA_DRIVER_TYPE: mongodb
+              CHIMERA_MONGODB_URI: "mongodb://127.0.0.1:27017"
+              CHIMERA_MONGODB_DATABASE: s3chimera_test
+
+          - driver: mysql-sharded
+            container: "mysql:8.0"
+            is_sharded: true
+            env:
+              CHIMERA_DRIVER_TYPE: mysql-sharded
+              CHIMERA_MYSQL_META_URL: "r2dbc:mysql://127.0.0.1:3306/s3chimera_meta"
+              CHIMERA_MYSQL_CHUNK1_URL: "r2dbc:mysql://127.0.0.1:3306/s3chimera_chunk1"
+              CHIMERA_MYSQL_CHUNK2_URL: "r2dbc:mysql://127.0.0.1:3306/s3chimera_chunk2"
+              CHIMERA_MYSQL_USERNAME: root
+              CHIMERA_MYSQL_PASSWORD: testpass
+
+          - driver: postgresql-sharded
+            container: "postgres:16"
+            is_sharded: true
+            env:
+              CHIMERA_DRIVER_TYPE: postgresql-sharded
+              CHIMERA_POSTGRESQL_META_URL: "r2dbc:postgresql://127.0.0.1:5432/s3chimera_meta"
+              CHIMERA_POSTGRESQL_CHUNK1_URL: "r2dbc:postgresql://127.0.0.1:5432/s3chimera_chunk1"
+              CHIMERA_POSTGRESQL_CHUNK2_URL: "r2dbc:postgresql://127.0.0.1:5432/s3chimera_chunk2"
+              CHIMERA_POSTGRESQL_USERNAME: postgres
+              CHIMERA_POSTGRESQL_PASSWORD: testpass
+
+          - driver: mongodb-sharded
+            container: "mongo:7.0"
+            is_sharded: true
+            env:
+              CHIMERA_DRIVER_TYPE: mongodb-sharded
+              CHIMERA_MONGODB_META_URI: "mongodb://127.0.0.1:27017"
+              CHIMERA_MONGODB_META_DATABASE: s3chimera_meta
+              CHIMERA_MONGODB_CHUNK1_URI: "mongodb://127.0.0.1:27017"
+              CHIMERA_MONGODB_CHUNK1_DATABASE: s3chimera_chunk1
+              CHIMERA_MONGODB_CHUNK2_URI: "mongodb://127.0.0.1:27017"
+              CHIMERA_MONGODB_CHUNK2_DATABASE: s3chimera_chunk2
+
+          - driver: s3
+            container: "minio/minio:latest"
+            env:
+              CHIMERA_DRIVER_TYPE: s3
+              CHIMERA_S3_ENDPOINT: "http://127.0.0.1:9000"
+              CHIMERA_S3_ACCESS_KEY: minioadmin
+              CHIMERA_S3_SECRET_KEY: minioadmin
+
+          - driver: webdav
+            container: "bytemark/webdav"
+            env:
+              CHIMERA_DRIVER_TYPE: webdav
+              CHIMERA_WEBDAV_URL: "http://127.0.0.1:8888/"
+              CHIMERA_WEBDAV_USERNAME: testuser
+              CHIMERA_WEBDAV_PASSWORD: testpass
+
+          - driver: sftp
+            container: "atmoz/sftp"
+            env:
+              CHIMERA_DRIVER_TYPE: sftp
+              CHIMERA_SFTP_HOST: "127.0.0.1"
+              CHIMERA_SFTP_PORT: "2222"
+              CHIMERA_SFTP_USERNAME: testuser
+              CHIMERA_SFTP_PASSWORD: testpass
+              CHIMERA_SFTP_BASE_PATH: "/upload"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Download Server Jar
+        uses: actions/download-artifact@v4
+        with:
+          name: chimera-server
+          path: .
+
+      - name: Install AWS CLI
+        # Install AWS CLI for all drivers requiring container services
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip -q awscliv2.zip
+          sudo ./aws/install --update
+
+      - name: Start Service Container
+        if: matrix.container != ''
+        run: |
+          if [[ "${{ matrix.driver }}" == "mysql"* ]]; then
+            docker run -d --name service -p 3306:3306 -e MYSQL_ROOT_PASSWORD=testpass -e MYSQL_DATABASE=s3chimera ${{ matrix.container }}
+          elif [[ "${{ matrix.driver }}" == "postgresql"* ]]; then
+            docker run -d --name service -p 5432:5432 -e POSTGRES_PASSWORD=testpass -e POSTGRES_USER=postgres -e POSTGRES_DB=s3chimera_test ${{ matrix.container }}
+          elif [[ "${{ matrix.driver }}" == "mongodb"* ]]; then
+            docker run -d --name service -p 27017:27017 ${{ matrix.container }}
+          elif [[ "${{ matrix.driver }}" == "s3" ]]; then
+            docker run -d --name service -p 9000:9000 -e MINIO_ROOT_USER=minioadmin -e MINIO_ROOT_PASSWORD=minioadmin ${{ matrix.container }} server /data
+          elif [[ "${{ matrix.driver }}" == "webdav" ]]; then
+            docker run -d --name service -p 8888:80 -e AUTH_TYPE=Basic -e USERNAME=testuser -e PASSWORD=testpass ${{ matrix.container }}
+          elif [[ "${{ matrix.driver }}" == "sftp" ]]; then
+            docker run -d --name service -p 2222:22 ${{ matrix.container }} testuser:testpass:::upload
+          fi
+
+      - name: Wait for Services and Init DB
+        if: matrix.container != ''
+        run: |
+          echo "Waiting for container to be ready..."
+          sleep 20
+          if [[ "${{ matrix.is_sharded }}" == "true" ]]; then
+            if [[ "${{ matrix.driver }}" == "mysql"* ]]; then
+              mysql -h 127.0.0.1 -u root -ptestpass -e "CREATE DATABASE IF NOT EXISTS s3chimera_meta; CREATE DATABASE IF NOT EXISTS s3chimera_chunk1; CREATE DATABASE IF NOT EXISTS s3chimera_chunk2;"
+            elif [[ "${{ matrix.driver }}" == "postgresql"* ]]; then
+              PGPASSWORD=testpass psql -h 127.0.0.1 -U postgres -c "CREATE DATABASE s3chimera_meta;"
+              PGPASSWORD=testpass psql -h 127.0.0.1 -U postgres -c "CREATE DATABASE s3chimera_chunk1;"
+              PGPASSWORD=testpass psql -h 127.0.0.1 -U postgres -c "CREATE DATABASE s3chimera_chunk2;"
+            fi
+          fi
+
+      - name: Create local test directory
+        if: matrix.driver == 'local'
+        run: mkdir -p /tmp/s3chimera-test
+
+      - name: Run Driver Tests
+        run: ./gradlew :chimera-test-s3:test -Pdriver=${{ matrix.driver }} --no-daemon
+        env: ${{ matrix.env }}
+
+      - name: Run Blackbox Tests
+        # Run black-box verification for all drivers
+        run: ./scripts/start-and-verify.sh chimera-server-0.0.1-SNAPSHOT.jar
+        env: ${{ matrix.env }}
+        continue-on-error: true
+        id: blackbox
+
+      - name: Upload blackbox logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blackbox-logs-${{ matrix.driver }}
+          path: |
+            server.log
+            verify.log
+          if-no-files-found: ignore
+
+      - name: Fail if blackbox tests failed
+        if: steps.blackbox.outcome == 'failure'
+        run: exit 1
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.driver }}
+          path: chimera-test-s3/build/reports/tests/
+
+  # =========================================
+  # Cross-driver copy tests (start all dependency containers)
+  # =========================================
+  test-crossdriver:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Create local test directory
+        run: mkdir -p /tmp/chimera-cross-test
+
+      # ========== Start all external dependency containers ==========
+      - name: Start MySQL
+        run: |
+          docker run -d --name mysql-cross \
+            -p 3306:3306 \
+            -e MYSQL_ROOT_PASSWORD=testpass \
+            -e MYSQL_DATABASE=s3chimera_cross \
+            mysql:8.0
+
+      - name: Start PostgreSQL
+        run: |
+          docker run -d --name postgres-cross \
+            -p 5432:5432 \
+            -e POSTGRES_PASSWORD=testpass \
+            -e POSTGRES_USER=postgres \
+            -e POSTGRES_DB=s3chimera_cross \
+            postgres:16
+
+      - name: Start MongoDB
+        run: |
+          docker run -d --name mongo-cross \
+            -p 27017:27017 \
+            mongo:7.0
+
+      - name: Start MinIO (S3)
+        run: |
+          docker run -d --name minio-cross \
+            -p 9000:9000 \
+            -e MINIO_ROOT_USER=minioadmin \
+            -e MINIO_ROOT_PASSWORD=minioadmin \
+            minio/minio:latest server /data
+
+      - name: Start WebDAV
+        run: |
+          docker run -d --name webdav-cross \
+            -p 8888:80 \
+            -e AUTH_TYPE=Basic \
+            -e USERNAME=testuser \
+            -e PASSWORD=testpass \
+            bytemark/webdav
+
+      - name: Start SFTP
+        run: |
+          docker run -d --name sftp-cross \
+            -p 2222:22 \
+            atmoz/sftp testuser:testpass:::upload
+
+      - name: Wait for all services to be ready
+        run: |
+          echo "Waiting for all containers to be fully ready..."
+          
+          # MySQL healthcheck
+          echo "Waiting for MySQL..."
+          for i in {1..60}; do
+            if docker exec mysql-cross mysqladmin ping -h localhost -u root -ptestpass --silent 2>/dev/null; then
+              echo "MySQL is ready!"
+              break
+            fi
+            sleep 2
+          done
+          
+          # PostgreSQL healthcheck
+          echo "Waiting for PostgreSQL..."
+          for i in {1..60}; do
+            if docker exec postgres-cross pg_isready -U postgres --quiet 2>/dev/null; then
+              echo "PostgreSQL is ready!"
+              break
+            fi
+            sleep 2
+          done
+          
+          # MongoDB healthcheck
+          echo "Waiting for MongoDB..."
+          for i in {1..60}; do
+            if docker exec mongo-cross mongosh --eval "db.adminCommand('ping')" --quiet 2>/dev/null; then
+              echo "MongoDB is ready!"
+              break
+            fi
+            sleep 2
+          done
+          
+          # MinIO healthcheck
+          echo "Waiting for MinIO..."
+          for i in {1..30}; do
+            if curl -s http://127.0.0.1:9000/minio/health/live >/dev/null 2>&1; then
+              echo "MinIO is ready!"
+              break
+            fi
+            sleep 2
+          done
+          
+          # WebDAV healthcheck
+          echo "Waiting for WebDAV..."
+          for i in {1..30}; do
+            if curl -s -o /dev/null -w "%{http_code}" -u testuser:testpass http://127.0.0.1:8888/ | grep -q "200\|207"; then
+              echo "WebDAV is ready!"
+              break
+            fi
+            sleep 2
+          done
+          
+          # SFTP healthcheck
+          echo "Waiting for SFTP..."
+          for i in {1..30}; do
+            if nc -z 127.0.0.1 2222 2>/dev/null; then
+              echo "SFTP is ready!"
+              break
+            fi
+            sleep 2
+          done
+          
+          # Final status
+          docker ps
+          echo "All services should be ready now!"
+
+      - name: Run CrossDriver Matrix tests
+        run: ./gradlew :chimera-test-s3:crossDriverTest --no-daemon
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-crossdriver
+          path: chimera-test-s3/build/reports/tests/
+
+      - name: Cleanup containers
+        if: always()
+        run: |
+          docker stop mysql-cross postgres-cross mongo-cross minio-cross webdav-cross sftp-cross || true
+          docker rm mysql-cross postgres-cross mongo-cross minio-cross webdav-cross sftp-cross || true

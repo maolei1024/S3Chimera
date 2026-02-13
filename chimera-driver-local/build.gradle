@@ -1,0 +1,13 @@
+plugins {
+    id 'java-library'
+}
+
+description = 'S3Chimera Local Filesystem Driver - Local storage with S3 API'
+
+dependencies {
+    implementation project(':chimera-core')
+    
+    // Jackson for metadata JSON serialization
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+}

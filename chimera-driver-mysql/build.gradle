@@ -1,0 +1,22 @@
+plugins {
+    id 'java-library'
+}
+
+description = 'S3Chimera MySQL Driver - R2DBC based MySQL storage with sharding support'
+
+dependencies {
+    implementation project(':chimera-core')
+    
+    // R2DBC SPI (核心接口，不包含自动配置)
+    implementation 'io.r2dbc:r2dbc-spi'
+    
+    // MySQL R2DBC driver
+    implementation 'io.asyncer:r2dbc-mysql'
+    
+    // R2DBC connection pool
+    implementation 'io.r2dbc:r2dbc-pool'
+    
+    // For testing with H2
+    testImplementation 'io.r2dbc:r2dbc-h2'
+    testImplementation 'com.h2database:h2'
+}

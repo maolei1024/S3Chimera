@@ -53,8 +53,8 @@ RUN --mount=type=cache,target=/root/.gradle/caches \
 FROM eclipse-temurin:21-jre
 
 LABEL maintainer="ixuni" \
-      description="S3Chimera - S3 Compatible Storage Gateway" \
-      version="0.0.1-SNAPSHOT"
+    description="S3Chimera - S3 Compatible Storage Gateway" \
+    version="0.0.1-SNAPSHOT"
 
 WORKDIR /app
 
@@ -72,12 +72,12 @@ RUN chown -R chimera:chimera /app
 
 USER chimera
 
-# 暴露端口 (默认 Spring Boot 端口)
-EXPOSE 8080
+# Expose port (default S3Chimera port)
+EXPOSE 9000
 
-# 健康检查
+# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:8080/actuator/health || exit 1
+    CMD curl -f http://localhost:9000/actuator/health || exit 1
 
 # =================================================================
 # 配置说明:
